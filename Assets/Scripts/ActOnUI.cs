@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class ActOnUI : MonoBehaviour {
@@ -8,6 +9,7 @@ public class ActOnUI : MonoBehaviour {
     public Slider Slider;
     public Text Count;
 
+	public	GameObject Prefab;
 
     [System.Serializable]           //Must include this to allow Class to save
     public class SaveData {             //Only simple types allowed
@@ -20,6 +22,28 @@ public class ActOnUI : MonoBehaviour {
             Count = 0;
         }
     }
+
+	[System.Serializable]           //Must include this to allow Class to save
+	public	class MiniGO {
+		Vector3		mPosition;
+		Quaternion	mRotation;
+		Color		mColour;
+		MiniGO() {
+			mPosition=Vector3.zero;
+			mRotation=Quaternion.identity;
+			mColour=Color.white;
+		}
+	}
+
+	[System.Serializable]           //Must include this to allow Class to save
+	public class SaveGame {
+		SaveData		Header;
+		List<MiniGO>	ListGO;
+		SaveGame() {
+			Header=new SaveData();
+			ListGO=new List<MiniGO>();
+		}
+	}
 
     private SaveLoad mSaveLoad;     //Link to SaveLoad Script
 
@@ -46,8 +70,9 @@ public class ActOnUI : MonoBehaviour {
     }
 
     public void Load() {
-        mSaveData = mSaveLoad.LoadClass<SaveData>(mFileName);       //Load UI Elements into Save Load function
-        if (mSaveData != null) {
+		SaveData tSaveData=mSaveLoad.LoadClass<SaveData>(mFileName);       //Load UI Elements into Save Load function
+		if (tSaveData != null) {
+			mSaveData = tSaveData;
             InputText.text = mSaveData.Details;
             Slider.value = (float)mSaveData.Score;
             Count.text = string.Format("Save count {0}", mSaveData.Count);
@@ -55,4 +80,11 @@ public class ActOnUI : MonoBehaviour {
             Debug.Log(mSaveLoad.LastErrorMessage);
         }
     }
+
+	public void	Spawn() {
+		GameObject	tGO = Instantiate (Prefab);
+		Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();
+		Vector2	tDirection = new Vector2 (Random.Range (-Slider.value, Slider.value), Random.Range (-Slider.value, Slider.value));
+		tRB.AddForce (tDirection, ForceMode2D.Impulse);
+	}
 }
