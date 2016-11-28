@@ -25,21 +25,25 @@ public class ActOnUI : MonoBehaviour {
 
 	[System.Serializable]           //Must include this to allow Class to save
 	public	class MiniGO {
-		Vector3		mPosition;
-		Quaternion	mRotation;
-		Color		mColour;
-		MiniGO() {
-			mPosition=Vector3.zero;
-			mRotation=Quaternion.identity;
-			mColour=Color.white;
+		public	Vector2		mPosition;
+		public	float		mRotation;
+		public	Vector2		mVelocity;
+		public	float		mAngularVelocity;
+		public	MiniGO() {
+			mPosition=Vector2.zero;
+			mRotation=0f;
+			mVelocity=Vector2.zero;
+			mAngularVelocity=0f;
 		}
 	}
 
 	[System.Serializable]           //Must include this to allow Class to save
 	public class SaveGame {
-		SaveData		Header;
-		List<MiniGO>	ListGO;
-		SaveGame() {
+		public	int				Version;
+		public	SaveData		Header;
+		public	List<MiniGO>	ListGO;
+		public	SaveGame() {
+			Version=1;
 			Header=new SaveData();
 			ListGO=new List<MiniGO>();
 		}
@@ -47,39 +51,60 @@ public class ActOnUI : MonoBehaviour {
 
     private SaveLoad mSaveLoad;     //Link to SaveLoad Script
 
-    private SaveData mSaveData;
-
     private string mFileName = "FileSave.gm";       //Use this filenane to save, it will pick save path automatically
 
     // Use this for initialization
     void Start() {
         mSaveLoad = GetComponent<SaveLoad>();     //Get Access to SaveLoad Code
-        mSaveData = new SaveData();             //Create Save Load class to save and load into
-        Count.text = string.Format("Save count {0}", mSaveData.Count);
+        Count.text = "Type here";
     }
 
 
-    public void Save() {                           //Copy UI elements to Save Load function and save it
-        mSaveData.Details = InputText.text;
-        mSaveData.Score = (int)Slider.value;
-        mSaveData.Count++;
-        if (!mSaveLoad.SaveClass<SaveData>(mSaveData, mFileName)) {
-            Debug.Log(mSaveLoad.LastErrorMessage);
-        }
+	public void Clear() {
+		GameObject[]	tGOArray = GameObject.FindGameObjectsWithTag ("SaveThis");
+		foreach (GameObject tGO in tGOArray) {
+			Destroy (tGO);
+		}
+	}
 
-    }
+	public	void	SaveState() {
+		GameObject[]	tGOArray = GameObject.FindGameObjectsWithTag ("SaveThis");
+		SaveGame	tSaveGame = new SaveGame ();
+		foreach (GameObject tGO in tGOArray) {
+			Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();
+			MiniGO tmGO = new MiniGO ();
+			tmGO.mPosition = tRB.position;
+			tmGO.mRotation = tRB.rotation;
+			tmGO.mVelocity = tRB.velocity;
+			tmGO.mAngularVelocity = tRB.angularVelocity;
+			tSaveGame.ListGO.Add (tmGO);
+		}
+		tSaveGame.Header.Details = InputText.text;
+		tSaveGame.Header.Score = (int)Slider.value;
+		tSaveGame.Header.Count=tSaveGame.ListGO.Count;
+		if (mSaveLoad.SaveClass<SaveGame> (tSaveGame, mFileName)) {
+			Debug.Log ("Saved");
+		} else {
+			Debug.Log (mSaveLoad.LastErrorMessage);
+		}
+	}
 
-    public void Load() {
-		SaveData tSaveData=mSaveLoad.LoadClass<SaveData>(mFileName);       //Load UI Elements into Save Load function
-		if (tSaveData != null) {
-			mSaveData = tSaveData;
-            InputText.text = mSaveData.Details;
-            Slider.value = (float)mSaveData.Score;
-            Count.text = string.Format("Save count {0}", mSaveData.Count);
-        } else {
-            Debug.Log(mSaveLoad.LastErrorMessage);
-        }
-    }
+	public	void	LoadState() {
+		SaveGame tSaveGame=mSaveLoad.LoadClass<SaveGame>(mFileName);       //Load GameObjects 
+		if (tSaveGame != null) {
+			foreach(MiniGO tmGO in tSaveGame.ListGO) {
+				GameObject	tGO = Instantiate (Prefab);
+				Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();
+				tRB.velocity = tmGO.mVelocity;
+				tRB.angularVelocity = tmGO.mAngularVelocity;
+				tRB.position = tmGO.mPosition;
+				tRB.rotation = tmGO.mRotation;
+			}
+			InputText.text = tSaveGame.Header.Details;
+			Slider.value = (float)tSaveGame.Header.Score;
+			Count.text = string.Format("Save count {0}", tSaveGame.Header.Count);
+		}
+	}
 
 	public void	Spawn() {
 		GameObject	tGO = Instantiate (Prefab);

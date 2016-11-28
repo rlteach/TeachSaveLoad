@@ -29,6 +29,26 @@ sealed class Vector3SerializationSurrogate : ISerializationSurrogate
 	}
 }
 
+// This class serializes a Vector2 object.
+sealed class Vector2SerializationSurrogate : ISerializationSurrogate 
+{
+	// Serialize Vector2
+	public void GetObjectData(System.Object obj,SerializationInfo info, StreamingContext context) 
+	{
+		Vector2 tVector2 = (Vector2) obj;
+		info.AddValue("X", tVector2.x);
+		info.AddValue("Y", tVector2.y);
+	}
+
+	// Deserialize Vector2
+	public System.Object SetObjectData(System.Object obj,SerializationInfo info, StreamingContext context,ISurrogateSelector selector) 
+	{
+		Vector2 tVector2 = (Vector2) obj;
+		tVector2.x = (float)info.GetDouble("X");
+		tVector2.y = (float)info.GetDouble("Y");
+		return tVector2;
+	}
+}
 // This class serializes a Color object.
 sealed class ColourSerializationSurrogate : ISerializationSurrogate 
 {
@@ -107,6 +127,7 @@ public class SaveLoad : MonoBehaviour {
 	private	SurrogateSelector	ExtendSurrogates() {
 		SurrogateSelector tSS = new SurrogateSelector();
 		tSS.AddSurrogate(typeof(Vector3),new StreamingContext(StreamingContextStates.All),new Vector3SerializationSurrogate());
+		tSS.AddSurrogate(typeof(Vector2),new StreamingContext(StreamingContextStates.All),new Vector2SerializationSurrogate());
 		tSS.AddSurrogate(typeof(Quaternion),new StreamingContext(StreamingContextStates.All),new QuaternionSerializationSurrogate());
 		tSS.AddSurrogate(typeof(Color),new StreamingContext(StreamingContextStates.All),new ColourSerializationSurrogate());
 		return tSS;
