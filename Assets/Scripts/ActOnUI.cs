@@ -25,12 +25,12 @@ public class ActOnUI : MonoBehaviour {
 
 	[System.Serializable]           //Must include this to allow Class to save
 	public	class MiniGO {
-		public	Vector2		mPosition;
-		public	float		mRotation;
-		public	Vector2		mVelocity;
-		public	float		mAngularVelocity;
-		public	MiniGO() {
-			mPosition=Vector2.zero;
+		public	Vector2		mPosition;		//Position of RB
+		public	float		mRotation;		//Rotation of RB
+		public	Vector2		mVelocity;			//Velocity of RB
+		public	float		mAngularVelocity;	//Angular Velocity of RB
+		public	MiniGO() {					//Default constructor
+			mPosition=Vector2.zero;		//Sensible values
 			mRotation=0f;
 			mVelocity=Vector2.zero;
 			mAngularVelocity=0f;
@@ -39,11 +39,11 @@ public class ActOnUI : MonoBehaviour {
 
 	[System.Serializable]           //Must include this to allow Class to save
 	public class SaveGame {
-		public	int				Version;
-		public	SaveData		Header;
-		public	List<MiniGO>	ListGO;
-		public	SaveGame() {
-			Version=1;
+		public	int				Version;		//Version of save file
+		public	SaveData		Header;		//Save File Header
+		public	List<MiniGO>	ListGO;		//List of Game Objects to save
+		public	SaveGame() {		//Default constructor
+			Version=1;				//Sensible values
 			Header=new SaveData();
 			ListGO=new List<MiniGO>();
 		}
@@ -60,29 +60,29 @@ public class ActOnUI : MonoBehaviour {
     }
 
 
-	public void Clear() {
-		GameObject[]	tGOArray = GameObject.FindGameObjectsWithTag ("SaveThis");
+	public void Clear() {		//Delete all tagged objects
+		GameObject[]	tGOArray = GameObject.FindGameObjectsWithTag ("SaveThis");		//Find Objects Tagged as SaveThis, these are all the objects we wish to store
 		foreach (GameObject tGO in tGOArray) {
-			Destroy (tGO);
+			Destroy (tGO);		//Kill them
 		}
 	}
 
-	public	void	SaveState() {
-		GameObject[]	tGOArray = GameObject.FindGameObjectsWithTag ("SaveThis");
-		SaveGame	tSaveGame = new SaveGame ();
-		foreach (GameObject tGO in tGOArray) {
-			Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();
-			MiniGO tmGO = new MiniGO ();
-			tmGO.mPosition = tRB.position;
+	public	void	SaveState() {			//Save Game state
+		GameObject[]	tGOArray = GameObject.FindGameObjectsWithTag ("SaveThis");		//Find all Objects Tagged as SaveThis, these are all the objects we wish to store
+		SaveGame	tSaveGame = new SaveGame ();		//Name SaveGame class
+		foreach (GameObject tGO in tGOArray) {			//For all objects marked as saveable
+			Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();		//Get RB
+			MiniGO tmGO = new MiniGO ();			//Make a miniGO, with just enough data to store what we need
+			tmGO.mPosition = tRB.position;			//copy variables
 			tmGO.mRotation = tRB.rotation;
 			tmGO.mVelocity = tRB.velocity;
 			tmGO.mAngularVelocity = tRB.angularVelocity;
-			tSaveGame.ListGO.Add (tmGO);
+			tSaveGame.ListGO.Add (tmGO);		//Add to list
 		}
-		tSaveGame.Header.Details = InputText.text;
+		tSaveGame.Header.Details = InputText.text;		//Store other details in save file
 		tSaveGame.Header.Score = (int)Slider.value;
 		tSaveGame.Header.Count=tSaveGame.ListGO.Count;
-		if (mSaveLoad.SaveClass<SaveGame> (tSaveGame, mFileName)) {
+		if (mSaveLoad.SaveClass<SaveGame> (tSaveGame, mFileName)) {		//Use save routine to save the class
 			Debug.Log ("Saved");
 		} else {
 			Debug.Log (mSaveLoad.LastErrorMessage);
@@ -91,25 +91,25 @@ public class ActOnUI : MonoBehaviour {
 
 	public	void	LoadState() {
 		SaveGame tSaveGame=mSaveLoad.LoadClass<SaveGame>(mFileName);       //Load GameObjects 
-		if (tSaveGame != null) {
-			foreach(MiniGO tmGO in tSaveGame.ListGO) {
+		if (tSaveGame != null) {						//If loaded successfully
+			foreach(MiniGO tmGO in tSaveGame.ListGO) {		//Make new GO from prefab for each loaded item
 				GameObject	tGO = Instantiate (Prefab);
-				Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();
-				tRB.velocity = tmGO.mVelocity;
+				Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();		//Get RB
+				tRB.velocity = tmGO.mVelocity;						///Copy values from save file
 				tRB.angularVelocity = tmGO.mAngularVelocity;
 				tRB.position = tmGO.mPosition;
 				tRB.rotation = tmGO.mRotation;
 			}
-			InputText.text = tSaveGame.Header.Details;
+			InputText.text = tSaveGame.Header.Details;			//Grab header details
 			Slider.value = (float)tSaveGame.Header.Score;
 			Count.text = string.Format("Save count {0}", tSaveGame.Header.Count);
 		}
 	}
 
-	public void	Spawn() {
+	public void	Spawn() {			//Span a new object from prefab
 		GameObject	tGO = Instantiate (Prefab);
 		Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();
-		Vector2	tDirection = new Vector2 (Random.Range (-Slider.value, Slider.value), Random.Range (-Slider.value, Slider.value));
+		Vector2	tDirection = new Vector2 (Random.Range (-Slider.value, Slider.value), Random.Range (-Slider.value, Slider.value));	//Random accelleration
 		tRB.AddForce (tDirection, ForceMode2D.Impulse);
 	}
 }

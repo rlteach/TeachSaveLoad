@@ -141,7 +141,7 @@ public class SaveLoad : MonoBehaviour {
             FileStream tFS = null;  //If null file was not opened
             try {       //This will try to run the code below, but if there is an error go straight to catch
                 BinaryFormatter tBF = new BinaryFormatter();            //use C# Binary data, that way user cannot edit it easily
-				tBF.SurrogateSelector = ExtendSurrogates();
+				tBF.SurrogateSelector = ExtendSurrogates();		//Include the code to allow serialization of Vectors & Quaternions 
                 tFS = File.Open(tFullPath, FileMode.Open);       //Open File I/O
                 tSaveData = (T)tBF.Deserialize(tFS);             //Grab Header
                 tFS.Close();        //Close file
@@ -166,8 +166,8 @@ public class SaveLoad : MonoBehaviour {
         FileStream tFS = null;          //If null file was not opened
         try {
             BinaryFormatter tBF = new BinaryFormatter();        //Store as binary
-			tBF.SurrogateSelector = ExtendSurrogates();
-            tFS = File.Create(tFullPath);
+			tBF.SurrogateSelector = ExtendSurrogates();	//Include the code to allow serialization of Vectors & Quaternions
+            tFS = File.Create(tFullPath);		//Open File
             tBF.Serialize(tFS, vSaveClass);          //Save Data
             tSuccess=true;
             mLastError = "Saved OK";
