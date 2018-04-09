@@ -3,7 +3,6 @@ using System.Collections.Generic;           //List<generic>
 using System.IO;        //Used for saving
 using System;       //Used for Time & Date
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Binary;       //Used to format data
 
 // This class serializes a Vector3 object.
@@ -109,8 +108,7 @@ public class SaveLoad : MonoBehaviour {
     //From the copies of the prefab are made and using the loaded information, put in the right place on screen
 
  
-    private string mFilePath;                   //Path for Save
-
+ 
     private string mLastError;                  //Last Error Message
 
     public string LastErrorMessage {
@@ -119,9 +117,21 @@ public class SaveLoad : MonoBehaviour {
         }
     }
 
-    void    Start() {
-        mFilePath = Application.persistentDataPath + "/";
+
+    public static SaveLoad singleton;
+    SurrogateSelector mAdditionalSerialisers;
+
+
+    private void Awake() {
+        if(singleton==null) {
+            mAdditionalSerialisers = ExtendSurrogates();
+            singleton = this;
+            DontDestroyOnLoad(gameObject);
+        } else if(singleton!=this) {
+            DestroyObject(gameObject);
+        }
     }
+
 
 	//Extend SurrogateSelectors for loading & saving
 	private	SurrogateSelector	ExtendSurrogates() {
@@ -133,19 +143,30 @@ public class SaveLoad : MonoBehaviour {
 		return tSS;
 	}
 
-    public T LoadClass<T>(string vFileName) where T : new() {       //Load file of List<SavedObject> containing Position, rotation & name for each item
-        string tFullPath = mFilePath + vFileName;
-        mLastError = "";
-        T tSaveData = default(T);                    //Space to load header
+
+    //FileStructure
+    //Version number
+
+    int CurrentVersionNumber = 2; 
+
+    public  bool    LoadGame(string vFilename) {
+        bool tSuccess = false;
+        string tFullPath = Application.persistentDataPath + "/" + vFilename;
+        FileStream tFS = null;
         if (File.Exists(tFullPath)) {
-            FileStream tFS = null;  //If null file was not opened
             try {       //This will try to run the code below, but if there is an error go straight to catch
                 BinaryFormatter tBF = new BinaryFormatter();            //use C# Binary data, that way user cannot edit it easily
-				tBF.SurrogateSelector = ExtendSurrogates();		//Include the code to allow serialization of Vectors & Quaternions 
+                tBF.SurrogateSelector = mAdditionalSerialisers;		//Include the code to allow serialization of Vectors & Quaternions 
                 tFS = File.Open(tFullPath, FileMode.Open);       //Open File I/O
-                tSaveData = (T)tBF.Deserialize(tFS);             //Grab Header
+                int tVersionNumber = (int)tBF.Deserialize(tFS);             //Grab Version Number
+                if(tVersionNumber == CurrentVersionNumber) {
+
+                    tSuccess = true;
+                    mLastError = "Loaded OK";
+                } else {
+                    mLastError = "Wrong Savegame Version";
+                }
                 tFS.Close();        //Close file
-                mLastError = "Loaded OK";
             } catch (Exception tE) {      //If an error happens above, comes here
                 mLastError = "Load Error:" + tE.Message;
             } finally {     //This will run at the end of the try, if it succeeded or failed
@@ -156,19 +177,20 @@ public class SaveLoad : MonoBehaviour {
         } else {
             mLastError = tFullPath + " not found";
         }
-        return tSaveData;
+        return tSuccess;
     }
 
-    public bool SaveClass<T>(T vSaveClass,string vFileName) {
-        string tFullPath = mFilePath + vFileName;
-        mLastError = "";
+
+    public bool SaveGame(string vFilename) {
         bool tSuccess = false;
+        string tFullPath = Application.persistentDataPath + "/" + vFilename;
+        mLastError = "";
         FileStream tFS = null;          //If null file was not opened
         try {
             BinaryFormatter tBF = new BinaryFormatter();        //Store as binary
-			tBF.SurrogateSelector = ExtendSurrogates();	//Include the code to allow serialization of Vectors & Quaternions
+			tBF.SurrogateSelector = mAdditionalSerialisers;	//Include the code to allow serialization of Vectors & Quaternions
             tFS = File.Create(tFullPath);		//Open File
-            tBF.Serialize(tFS, vSaveClass);          //Save Data
+            tBF.Serialize(tFS, CurrentVersionNumber);          //Save Data
             tSuccess=true;
             mLastError = "Saved OK";
         } catch (Exception tE) {        //Deal with error
@@ -179,5 +201,21 @@ public class SaveLoad : MonoBehaviour {
             }
         }
         return tSuccess;
+    }
+
+    public GameObject Prefab;
+
+    [System.Serializable]           //Must include this to allow Class to save
+    public class MiniGO {
+        public Vector2 mPosition;       //Position of RB
+        public float mRotation;     //Rotation of RB
+        public Vector2 mVelocity;           //Velocity of RB
+        public float mAngularVelocity;  //Angular Velocity of RB
+        public MiniGO() {                   //Default constructor
+            mPosition = Vector2.zero;       //Sensible values
+            mRotation = 0f;
+            mVelocity = Vector2.zero;
+            mAngularVelocity = 0f;
+        }
     }
 }
