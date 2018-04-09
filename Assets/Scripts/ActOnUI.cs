@@ -18,7 +18,7 @@ public class ActOnUI : MonoBehaviour {
     public void	Spawn() {			//Span a new object from prefab
 		GameObject	tGO = Instantiate (Prefab);
 		Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();
-		Vector2	tDirection = new Vector2 (Random.Range (-Slider.value, Slider.value), Random.Range (-Slider.value, Slider.value));	//Random accelleration
+		Vector2	tDirection = new Vector2 (Random.Range (-Slider.value, Slider.value), Random.Range (-Slider.value, Slider.value));	//Random acceleration
 		tRB.AddForce (tDirection, ForceMode2D.Impulse);
 	}
 
@@ -36,11 +36,10 @@ public class ActOnUI : MonoBehaviour {
     }
 
 
-    public void Clear() {       //Delete all tagged objects
-        GameObject[] tGOArray = GameObject.FindGameObjectsWithTag("SaveThis");      //Find Objects Tagged as SaveThis, these are all the objects we wish to store
-        foreach (GameObject tGO in tGOArray) {
-            Destroy(tGO);       //Kill them
+    public void Clear() {       //Delete all SaveAble objects
+        SaveBall[] tSaveArray = GameObject.FindObjectsOfType<SaveBall>();      //Find Objects which have Save code
+        foreach (SaveBall tSB in tSaveArray) {
+            Destroy(tSB.gameObject);       //Kill them
         }
     }
-
 }
