@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
 
@@ -59,4 +60,19 @@ public class GameManager : MonoBehaviour {
 		tError.Colour = vColour;
         tError.Title = vTitle;
     }
+
+
+    public  static  string PanelInputField {
+        get {
+            InputField tInput = FindObjectOfType<InputField>();
+            Debug.Assert(tInput != null, "No InputField found");
+            return tInput.text;
+        }
+        set {
+            InputField tInput = FindObjectOfType<InputField>();
+            Debug.Assert(tInput != null, "No InputField found");
+            tInput.text = value;
+        }
+    }
+
 }

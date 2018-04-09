@@ -37,9 +37,10 @@ public class ActOnUI : MonoBehaviour {
 
 
     public void Clear() {       //Delete all SaveAble objects
-        SaveBall[] tSaveArray = GameObject.FindObjectsOfType<SaveBall>();      //Find Objects which have Save code
+        SaveBall[] tSaveArray = FindObjectsOfType<SaveBall>();      //Find Objects which have Save code
         foreach (SaveBall tSB in tSaveArray) {
             Destroy(tSB.gameObject);       //Kill them
         }
+        GameManager.PanelInputField = "";
     }
 }

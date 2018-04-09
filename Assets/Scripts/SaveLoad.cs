@@ -3,6 +3,8 @@ using System.IO;        //Used for saving
 using System;       //Used for Time & Date
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;       //Used to format data
+using UnityEngine.UI;
+
 
 // This class serializes a Vector3 object.
 sealed class Vector3SerializationSurrogate : ISerializationSurrogate 
@@ -116,10 +118,9 @@ public class SaveLoad : MonoBehaviour {
         }
     }
 
-
+    //Used to access SaveLoad from entire Game
     public static SaveLoad singleton;
     SurrogateSelector mAdditionalSerialisers;
-
 
     private void Awake() {
         if(singleton==null) {
@@ -146,7 +147,7 @@ public class SaveLoad : MonoBehaviour {
     //FileStructure
     //Version number
 
-    int CurrentVersionNumber = 1;
+    public  int CurrentVersionNumber = 2;
 
     public GameObject BallPrefab;       //Link in IDE
 
@@ -181,23 +182,31 @@ public class SaveLoad : MonoBehaviour {
         switch (vVersionNumber) {       //Use correct loader
 
             case 1: {
-                int tObjectCount = (int)vBF.Deserialize(vFS);       ///Get number of Objects
-                while(tObjectCount > 0) {
-                    SaveBall.Load(vVersionNumber, vFS, vBF, BallPrefab);
-                    tObjectCount--;
-                }
-                mLastError = tOK;
-                return true;
+                    int tObjectCount = (int)vBF.Deserialize(vFS);       ///Get number of Objects
+                    while(tObjectCount > 0) {
+                        SaveBall.Load(1, vFS, vBF, BallPrefab);     //Version 1 of BallSave OK
+                        tObjectCount--;
+                    }
+                    mLastError = tOK;
+                    return true;
             }
-            case 2:
-                break;
-
+            case 2: {
+                    GameManager.PanelInputField = (string)vBF.Deserialize(vFS);     //Version 2 feature
+                    int tObjectCount = (int)vBF.Deserialize(vFS);       ///Get number of Objects
+                    while (tObjectCount > 0) {
+                        SaveBall.Load(1, vFS, vBF, BallPrefab);     //Version 1 of BallSave OK
+                        tObjectCount--;
+                    }
+                    mLastError = tOK;
+                    return true;
+                }
             default:
                 mLastError = "Wrong Savegame Version";
                 break;
         }
         return false;
     }
+
 
 
     public bool SaveGame(string vFilename) {
@@ -226,9 +235,21 @@ public class SaveLoad : MonoBehaviour {
     //Version Number
     //Number of Objects
     //SaveBall Objects[]
+
+
+    //Save file format for V2
+    //Version Number
+    //Panel Input field
+    //Number of Objects
+    //SaveBall Objects[]
+
     private void    SaveCurrentVersion(FileStream vFS, BinaryFormatter vBF) {
         vBF.Serialize(vFS, CurrentVersionNumber);          //Save Data, Current Version
-        SaveBall[] tSaveArray = GameObject.FindObjectsOfType<SaveBall>();      //Find Objects which have Save code
+        if(CurrentVersionNumber>1) {
+            //Version 2 feature
+            vBF.Serialize(vFS, GameManager.PanelInputField);            //Save Input field Added in Version 2
+        }
+        SaveBall[] tSaveArray = FindObjectsOfType<SaveBall>();      //Find Objects which have Save code
         vBF.Serialize(vFS, tSaveArray.Length);          //Store Number of game objects saved
         foreach (SaveBall tSB in tSaveArray) {
             tSB.Save(vFS, vBF);         //Ask object to save itself
