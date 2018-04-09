@@ -1,9 +1,7 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;           //List<generic>
 using System.IO;        //Used for saving
 using System;       //Used for Time & Date
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Binary;       //Used to format data
 
 // This class serializes a Vector3 object.
@@ -109,8 +107,7 @@ public class SaveLoad : MonoBehaviour {
     //From the copies of the prefab are made and using the loaded information, put in the right place on screen
 
  
-    private string mFilePath;                   //Path for Save
-
+ 
     private string mLastError;                  //Last Error Message
 
     public string LastErrorMessage {
@@ -119,9 +116,21 @@ public class SaveLoad : MonoBehaviour {
         }
     }
 
-    void    Start() {
-        mFilePath = Application.persistentDataPath + "/";
+
+    public static SaveLoad singleton;
+    SurrogateSelector mAdditionalSerialisers;
+
+
+    private void Awake() {
+        if(singleton==null) {
+            mAdditionalSerialisers = ExtendSurrogates();
+            singleton = this;
+            DontDestroyOnLoad(gameObject);
+        } else if(singleton!=this) {
+            DestroyObject(gameObject);
+        }
     }
+
 
 	//Extend SurrogateSelectors for loading & saving
 	private	SurrogateSelector	ExtendSurrogates() {
@@ -133,19 +142,27 @@ public class SaveLoad : MonoBehaviour {
 		return tSS;
 	}
 
-    public T LoadClass<T>(string vFileName) where T : new() {       //Load file of List<SavedObject> containing Position, rotation & name for each item
-        string tFullPath = mFilePath + vFileName;
-        mLastError = "";
-        T tSaveData = default(T);                    //Space to load header
+
+    //FileStructure
+    //Version number
+
+    int CurrentVersionNumber = 1;
+
+    public GameObject BallPrefab;       //Link in IDE
+
+    public  bool    LoadGame(string vFilename) {
+        bool tSuccess = false;
+        string tFullPath = Application.persistentDataPath + "/" + vFilename;
+        FileStream tFS = null;
         if (File.Exists(tFullPath)) {
-            FileStream tFS = null;  //If null file was not opened
             try {       //This will try to run the code below, but if there is an error go straight to catch
                 BinaryFormatter tBF = new BinaryFormatter();            //use C# Binary data, that way user cannot edit it easily
-				tBF.SurrogateSelector = ExtendSurrogates();		//Include the code to allow serialization of Vectors & Quaternions 
+                tBF.SurrogateSelector = mAdditionalSerialisers;		//Include the code to allow serialization of Vectors & Quaternions 
                 tFS = File.Open(tFullPath, FileMode.Open);       //Open File I/O
-                tSaveData = (T)tBF.Deserialize(tFS);             //Grab Header
+                int tVersionNumber = (int)tBF.Deserialize(tFS);             //Grab Version Number
+                Debug.LogFormat("Current GameVersion V{0:d} LoadGame V{1:d}", CurrentVersionNumber,tVersionNumber);
+                tSuccess=LoadVersion(tVersionNumber, tFS, tBF);      //Load using correct loader
                 tFS.Close();        //Close file
-                mLastError = "Loaded OK";
             } catch (Exception tE) {      //If an error happens above, comes here
                 mLastError = "Load Error:" + tE.Message;
             } finally {     //This will run at the end of the try, if it succeeded or failed
@@ -156,20 +173,44 @@ public class SaveLoad : MonoBehaviour {
         } else {
             mLastError = tFullPath + " not found";
         }
-        return tSaveData;
+        return tSuccess;
     }
 
-    public bool SaveClass<T>(T vSaveClass,string vFileName) {
-        string tFullPath = mFilePath + vFileName;
-        mLastError = "";
+    private bool LoadVersion(int vVersionNumber,FileStream vFS, BinaryFormatter vBF) {
+        string tOK = "OK";
+        switch (vVersionNumber) {       //Use correct loader
+
+            case 1: {
+                int tObjectCount = (int)vBF.Deserialize(vFS);       ///Get number of Objects
+                while(tObjectCount > 0) {
+                    SaveBall.Load(vVersionNumber, vFS, vBF, BallPrefab);
+                    tObjectCount--;
+                }
+                mLastError = tOK;
+                return true;
+            }
+            case 2:
+                break;
+
+            default:
+                mLastError = "Wrong Savegame Version";
+                break;
+        }
+        return false;
+    }
+
+
+    public bool SaveGame(string vFilename) {
         bool tSuccess = false;
+        string tFullPath = Application.persistentDataPath + "/" + vFilename;
+        mLastError = "";
         FileStream tFS = null;          //If null file was not opened
         try {
             BinaryFormatter tBF = new BinaryFormatter();        //Store as binary
-			tBF.SurrogateSelector = ExtendSurrogates();	//Include the code to allow serialization of Vectors & Quaternions
+			tBF.SurrogateSelector = mAdditionalSerialisers;	//Include the code to allow serialization of Vectors & Quaternions
             tFS = File.Create(tFullPath);		//Open File
-            tBF.Serialize(tFS, vSaveClass);          //Save Data
-            tSuccess=true;
+            SaveCurrentVersion(tFS, tBF);
+            tSuccess =true;
             mLastError = "Saved OK";
         } catch (Exception tE) {        //Deal with error
             mLastError = "Save Error:" + tE.Message;
@@ -179,5 +220,18 @@ public class SaveLoad : MonoBehaviour {
             }
         }
         return tSuccess;
+    }
+
+    //Save file format for V1
+    //Version Number
+    //Number of Objects
+    //SaveBall Objects[]
+    private void    SaveCurrentVersion(FileStream vFS, BinaryFormatter vBF) {
+        vBF.Serialize(vFS, CurrentVersionNumber);          //Save Data, Current Version
+        SaveBall[] tSaveArray = GameObject.FindObjectsOfType<SaveBall>();      //Find Objects which have Save code
+        vBF.Serialize(vFS, tSaveArray.Length);          //Store Number of game objects saved
+        foreach (SaveBall tSB in tSaveArray) {
+            tSB.Save(vFS, vBF);         //Ask object to save itself
+        }
     }
 }
