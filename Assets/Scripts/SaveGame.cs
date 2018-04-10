@@ -150,7 +150,7 @@ public class SaveGame : MonoBehaviour {
     //Version number
 
     [SerializeField]
-    private int CurrentVersionNumber = 2;
+    private int CurrentVersionNumber = 3;   //Can be set in IDE
 
     public static  int CurrentVersion {
         get {
