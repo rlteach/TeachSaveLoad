@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
-using System.IO;        //Used for saving
 using System;       //Used for Time & Date
+using System.IO;        //Used for saving
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;       //Used to format data
 using UnityEngine.UI;
@@ -49,6 +49,8 @@ sealed class Vector2SerializationSurrogate : ISerializationSurrogate
 		return tVector2;
 	}
 }
+
+
 // This class serializes a Color object.
 sealed class ColourSerializationSurrogate : ISerializationSurrogate 
 {
@@ -168,7 +170,6 @@ public class SaveGame : MonoBehaviour {
                 int tVersionNumber = (int)tBF.Deserialize(tFS);             //Grab Version Number
                 Debug.LogFormat("Current GameVersion V{0:d} LoadGame V{1:d}", CurrentVersionNumber,tVersionNumber);
                 tSuccess=LoadVersion(tVersionNumber, tFS, tBF);      //Load using correct loader
-                tFS.Close();        //Close file
             } catch (Exception tE) {      //If an error happens above, comes here
                 mLastError = "Load Error:" + tE.Message;
             } finally {     //This will run at the end of the try, if it succeeded or failed
@@ -215,6 +216,66 @@ public class SaveGame : MonoBehaviour {
     }
 
 
+    public static  bool    TestSave(string vFilename, string vText, int vAge) {
+        bool tSuccess = false;
+        string tFullPath = Application.persistentDataPath + "/" + vFilename;        //Get a safe place to store data from Unity
+        FileStream tFS = null;          //If null file was not opened
+        try {
+            BinaryFormatter tBF = new BinaryFormatter();        //Store as binary
+            tFS = File.Create(tFullPath);		//Open File
+            tBF.Serialize(tFS, vText);      //Save String
+            tBF.Serialize(tFS, vAge);      //Save Age
+            tSuccess = true;             //Only if we get here have we been successful
+        } catch (Exception tE) {        //Deal with error
+            Debug.LogErrorFormat("Save Error:", tE.Message);
+        } finally {     //Make sure file is closed, if it was open
+            if (tFS != null) {
+                tFS.Close();        //Close file
+            }
+        }
+        return tSuccess;
+    }
+
+    public static bool TestSaveNoErrorCheck(string vFilename, string vText, int vAge) {
+        string tFullPath = Application.persistentDataPath + "/" + vFilename;        //Get a safe place to store data from Unity
+        FileStream tFS = null;          //If null file was not opened
+        BinaryFormatter tBF = new BinaryFormatter();        //Store as binary
+        tFS = File.Create(tFullPath);		//Open File
+
+        tBF.Serialize(tFS, vText);      //Save String
+        tBF.Serialize(tFS, vAge);      //Save Age
+
+        tFS.Close();        //Close file
+        return true;
+    }
+
+    public static bool TestLoad(string vFilename, out string vName, out int vAge) {
+        bool tSuccess = false;
+        string tFullPath = Application.persistentDataPath + "/" + vFilename;
+        FileStream tFS = null;
+        vName = "Invalid Data"; //Set some defaults
+        vAge = -1;
+        if (File.Exists(tFullPath)) {   //Does file exist?
+            try {       //This will try to run the code below, but if there is an error go straight to catch
+                BinaryFormatter tBF = new BinaryFormatter();            //use C# Binary data, that way user cannot edit it easily
+                tFS = File.Open(tFullPath, FileMode.Open);       //Open File I/O
+                vName = (string)tBF.Deserialize(tFS);       //Get Name, needs cast to work
+                vAge = (int)tBF.Deserialize(tFS);       //Get Age, needs cast to work
+                tSuccess = true;        //If we get here all is well
+            } catch (Exception tE) {      //If an error happens above, comes here
+                Debug.LogErrorFormat("Load Error:", tE.Message);
+            } finally {     //This will run at the end of the try, if it succeeded or failed
+                if (tFS != null) {      //If we opened the file, close it again, this is in case we have an error above, we ensure file is closed
+                    tFS.Close();        //Close file
+                }
+            }
+        } else {
+            Debug.LogErrorFormat("File not found:", tFullPath);
+        }
+        return tSuccess;
+    }
+
+
 
     public bool Save(string vFilename) {
         bool tSuccess = false;
@@ -226,7 +287,7 @@ public class SaveGame : MonoBehaviour {
 			tBF.SurrogateSelector = mAdditionalSerialisers;	//Include the code to allow serialization of Vectors & Quaternions
             tFS = File.Create(tFullPath);		//Open File
             SaveCurrentVersion(tFS, tBF);
-            tSuccess =true;
+            tSuccess =true;             //Only if we get here have we been successful
             mLastError = "Saved OK";
         } catch (Exception tE) {        //Deal with error
             mLastError = "Save Error:" + tE.Message;

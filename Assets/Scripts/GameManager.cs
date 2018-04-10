@@ -13,7 +13,51 @@ public class GameManager : MonoBehaviour {
 	public	int	Score;					//Game Score
 
 
-	public	GameObject	ErrorPrefab;	//Link to Error Box
+	public	GameObject	ErrorPrefab;    //Link to Error Box
+
+
+
+    //Key to use for PlayPrefs
+    private const string tKeyPlayCount = "PlayCount";
+    public static   int    PlayCount {
+    get {
+            if (!PlayerPrefs.HasKey(tKeyPlayCount)) {
+                PlayerPrefs.SetInt(tKeyPlayCount, 0);        //If Key Does not exist make it
+            }
+            return  PlayerPrefs.GetInt(tKeyPlayCount);       //Get Key
+        }
+        set {
+            PlayerPrefs.SetInt(tKeyPlayCount, value);        //Set Key
+        }
+    }
+
+    private const string tKeyFirstPlayed = "PlayTime";
+    public static string PlayTime {
+        get {
+                if (!PlayerPrefs.HasKey(tKeyFirstPlayed)) {     //If timje not set , set it
+                    PlayTime = System.DateTime.Now.ToString("H:mm d-M-yy");        //If Key Does not exist make it
+                }
+            return PlayerPrefs.GetString(tKeyFirstPlayed);       //Get Key
+        }
+        set {
+            if(!PlayerPrefs.HasKey(tKeyFirstPlayed)) {      //Only set time once
+                PlayerPrefs.SetString(tKeyFirstPlayed, value);        //Set Key
+            }
+        }
+    }
+
+
+    void    TestSaveLoad() {
+        const string tFilename = "UserDetails";
+        if (SaveGame.TestSave(tFilename,"Richard", 54)) {
+            string tName;
+            int tAge;
+            Debug.Log("Saved UserDetail");
+            if (SaveGame.TestLoad(tFilename,out tName,out tAge)) {
+                Debug.LogFormat("Loaded UserDetail:{0:s} Age {1:d}", tName, tAge);
+            }
+        }
+    }
 
 
     public static GameManager singleton;       //Using a static means we can access this without knowing the instance
@@ -23,6 +67,8 @@ public class GameManager : MonoBehaviour {
             DontDestroyOnLoad(gameObject);       //Make this Object persists when loading scenes
             Debug.Log("Game manager active");
 			InitGame ();
+            TestSaveLoad();
+            PlayCount++;        //Update play Count
         } else if (singleton != this) {
             Destroy(gameObject);     //If we are trying to create a second one, destroy it, there must be just one
         }

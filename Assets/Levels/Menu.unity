@@ -326,7 +326,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e2a278418d7fd2408639cf9fe104545, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BallPrefab: {fileID: 1000010849738808, guid: da1ae3155855d4dc2a4d1ab14d07a3b0, type: 2}
+  CurrentVersionNumber: 3
 --- !u!1 &1277782525
 GameObject:
   m_ObjectHideFlags: 0

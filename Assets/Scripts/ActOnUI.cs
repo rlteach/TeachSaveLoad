@@ -14,7 +14,7 @@ public class ActOnUI : MonoBehaviour {
 
 
     public void	Spawn() {			//Span a new object from prefab
-        GameObject	tGO = SaveObject.Create(SaveGame.CurrentVersion,Random.Range(0, 2));
+        GameObject	tGO = SaveObject.Create(SaveGame.CurrentVersion,Random.Range(0, SaveObject.PrefabCount));
 		Rigidbody2D tRB = tGO.GetComponent<Rigidbody2D> ();
 		Vector2	tDirection = new Vector2 (Random.Range (-Slider.value, Slider.value), Random.Range (-Slider.value, Slider.value));	//Random acceleration
 		tRB.AddForce (tDirection, ForceMode2D.Impulse);
