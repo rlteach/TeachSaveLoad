@@ -197,6 +197,7 @@ public class SaveGame : MonoBehaviour {
                     mLastError = tOK;
                     return true;
             }
+
             case 3:     //V2&3 are the same at this level
             case 2: {
                     GameManager.PanelInputField = (string)vBF.Deserialize(vFS);     //Version 2 feature
@@ -227,7 +228,7 @@ public class SaveGame : MonoBehaviour {
             tBF.Serialize(tFS, vAge);      //Save Age
             tSuccess = true;             //Only if we get here have we been successful
         } catch (Exception tE) {        //Deal with error
-            Debug.LogErrorFormat("Save Error:", tE.Message);
+            Debug.LogErrorFormat("Save Error:{0}", tE.Message);
         } finally {     //Make sure file is closed, if it was open
             if (tFS != null) {
                 tFS.Close();        //Close file
@@ -263,14 +264,14 @@ public class SaveGame : MonoBehaviour {
                 vAge = (int)tBF.Deserialize(tFS);       //Get Age, needs cast to work
                 tSuccess = true;        //If we get here all is well
             } catch (Exception tE) {      //If an error happens above, comes here
-                Debug.LogErrorFormat("Load Error:", tE.Message);
+                Debug.LogErrorFormat("Load Error:{0}", tE.Message);
             } finally {     //This will run at the end of the try, if it succeeded or failed
                 if (tFS != null) {      //If we opened the file, close it again, this is in case we have an error above, we ensure file is closed
                     tFS.Close();        //Close file
                 }
             }
         } else {
-            Debug.LogErrorFormat("File not found:", tFullPath);
+            Debug.LogErrorFormat("File not found:{0}", tFullPath);
         }
         return tSuccess;
     }
